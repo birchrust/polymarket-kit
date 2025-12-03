@@ -27,6 +27,8 @@ pub struct OrderParams {
     pub wallet: PrivateKeySigner,
 }
 
+// Automatically sign
+// Automatically select the optimal price from the incoming order book to create an order
 pub async fn create_order(params: OrderParams) -> Result<SignedOrderRequest, Error> {
     let signer = params.wallet.address();
     let nonce = params.nonce.unwrap_or(U256::ZERO);

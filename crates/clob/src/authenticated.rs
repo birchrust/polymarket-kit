@@ -47,9 +47,12 @@ impl AuthenticatedClient {
     }
 
     pub async fn derive_api_key(&self) -> Result<Credentials> {
+        let headers = create_l1_headers(&self.wallet, POLYGON_MAINNET_CHAIN_ID, None)?;
         let url = format!("{}/auth/derive-api-key", self.api_base);
-        let request = self.client.get(&url);
-        let request = self.auth_request(request)?;
+        let mut request = self.client.get(&url);
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
 
         let response = request.send().await?;
         let status = response.status();
