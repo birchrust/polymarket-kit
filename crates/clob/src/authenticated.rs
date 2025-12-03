@@ -1,6 +1,6 @@
 use crate::{
     POLY_ADDR_HEADER, POLY_NONCE_HEADER, POLY_SIG_HEADER, POLY_TS_HEADER, POLYGON_MAINNET_CHAIN_ID,
-    get_current_unix_time_secs,
+    get_current_unix_time_secs, into_result,
 };
 use alloy_primitives::{U256, hex::encode_prefixed};
 use alloy_signer::SignerSync;
@@ -47,23 +47,12 @@ impl AuthenticatedClient {
     }
 
     pub async fn derive_api_key(&self) -> Result<Credentials> {
-        let headers = create_l1_headers(&self.wallet, POLYGON_MAINNET_CHAIN_ID, None)?;
         let url = format!("{}/auth/derive-api-key", self.api_base);
-        let mut request = self.client.get(&url);
-        for (key, value) in headers {
-            request = request.header(key, value);
-        }
+        let request = self.client.get(&url);
+        let request = self.auth_request(request)?;
 
         let response = request.send().await?;
-        let status = response.status();
-
-        if status.is_success() {
-            response.json().await.map_err(|e| e.into())
-        } else {
-            let message = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-
-            Err(Error::msg(format!("API error: {} ({})", message, status.as_u16())))
-        }
+        into_result(response).await
     }
 }
 
