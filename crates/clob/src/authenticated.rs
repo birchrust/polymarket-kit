@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     POLY_ADDR_HEADER, POLY_NONCE_HEADER, POLY_SIG_HEADER, POLY_TS_HEADER, POLYGON_MAINNET_CHAIN_ID,
     get_current_unix_time_secs, into_result,
@@ -60,18 +62,18 @@ pub fn create_l1_headers(
     signer: &PrivateKeySigner,
     chain_id: u64,
     nonce: Option<U256>,
-) -> Result<[(&'static str, String); 4]> {
+) -> Result<HashMap<&'static str, String>> {
     let timestamp = get_current_unix_time_secs().to_string();
     let nonce_val = nonce.unwrap_or(U256::ZERO);
     let signature = sign_clob_auth_message(signer, timestamp.clone(), nonce_val, chain_id)?;
     let address = encode_prefixed(signer.address().as_slice());
 
-    Ok([
+    Ok(HashMap::from([
         (POLY_ADDR_HEADER, address),
         (POLY_SIG_HEADER, signature),
         (POLY_TS_HEADER, timestamp),
-        (POLY_NONCE_HEADER, format!("{:#x}", nonce_val)),
-    ])
+        (POLY_NONCE_HEADER, nonce_val.to_string()),
+    ]))
 }
 
 sol! {
